@@ -12,7 +12,9 @@ const analyzeRoutes = require("./routes/analyze.routes");
 const adminRoutes = require("./src/routes/admin.routes");
 const commentsRoutes = require("./routes/comments.routes");
 
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 app.use(express.json());
 
 handleDatabaseConnection(process.env.MONGO_URI)
