@@ -9,14 +9,10 @@ import Profile from "./pages/Profile";
 import AddPeople from "./pages/AddPeople";
 import SinglePost from "./pages/SinglePost";
 
-
 const App = () => {
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={<Protected element={<Register />} screen="login" />}
-      />
+      <Route path="/login" element={<Register />} />
       <Route path="/" element={<Protected element={<Home />} />} />
       <Route path="/upload" element={<Protected element={<Create />} />} />
       <Route path="/explore" element={<Protected element={<Explore />} />} />
@@ -33,7 +29,6 @@ const App = () => {
         element={<Protected element={<SinglePost />} />}
       />
       <Route path="/add" element={<Protected element={<AddPeople />} />} />
-      
     </Routes>
   );
 };

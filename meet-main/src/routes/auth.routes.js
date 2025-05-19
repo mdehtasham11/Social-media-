@@ -4,6 +4,7 @@ const { storage } = require("../storage/multer");
 const {
   handleRegisterUser,
   handleLoginUser,
+  handleLoginAdmin,
 } = require("../controller/auth.controller");
 const router = express.Router();
 
@@ -11,6 +12,7 @@ const upload = multer({ storage: storage });
 
 router.route("/register").post(upload.single("profile"), handleRegisterUser);
 router.route("/login").post(handleLoginUser);
+router.route("/login-admin").post(handleLoginAdmin);
 
 router.use((err, req, res, next) => {
  console.error(err.stack);

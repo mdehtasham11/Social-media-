@@ -67,7 +67,7 @@ exports.handleRegisterUser = asyncHandler(async (req, res) => {
   const token = jwt.sign(
     {
       id: user._id,
-      role: "user",
+      role: user.role,
     },
     process.env.JWT_SECRET
   );
@@ -110,7 +110,7 @@ exports.handleLoginUser = asyncHandler(async (req, res) => {
   const token = jwt.sign(
     {
       id: user._id,
-      role: "user",
+      role: user.role,
     },
     process.env.JWT_SECRET
   );
@@ -124,6 +124,51 @@ exports.handleLoginUser = asyncHandler(async (req, res) => {
         200,
         { token, user: userWithoutPassword },
         "Logged In sucessfully"
+      )
+    );
+});
+
+// Admin Login
+exports.handleLoginAdmin = asyncHandler(async (req, res) => {
+  const { userName, password } = req.body;
+
+  const missingField = [];
+  if (!password) missingField.push("password");
+  if (!userName) missingField.push("username");
+
+  if (missingField.length > 0) {
+    throw new ApiError(
+      400,
+      `Missing required fields: ${missingField.join(",")}`
+    );
+  }
+
+  const user = await User.findOne({ userName });
+
+  if (!user || user.role !== "admin") {
+    throw new ApiError(403, "Admin account not found or unauthorized");
+  }
+
+  const verify = bcrypt.compareSync(password, user.password);
+  if (!verify) throw new ApiError(401, "password not matched, try again later");
+
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: "admin",
+    },
+    process.env.JWT_SECRET
+  );
+
+  const { password: _, ...userWithoutPassword } = user.toObject();
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { token, user: userWithoutPassword },
+        "Admin logged in sucessfully"
       )
     );
 });

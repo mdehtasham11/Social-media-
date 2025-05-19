@@ -26,9 +26,13 @@ const UserManagement = () => {
         return token;
     };
 
-    // Configure axios defaults
+    // Configure axios defaults (base URL and auth header)
     const setupAxiosAuth = () => {
         const token = getAuthToken();
+
+        // Always set the API base so that every relative request is sent to the backend
+        axios.defaults.baseURL = config.API_BASE_URL;
+
         if (token) {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         }
@@ -37,7 +41,7 @@ const UserManagement = () => {
     const fetchUsers = async () => {
         setupAxiosAuth();
         try {
-            const response = await axios.get(`${config.API_BASE_URL}/admin/users?search=${search}&sort=${sort}&status=${status}`);
+            const response = await axios.get(`/admin/users?search=${search}&sort=${sort}&status=${status}`);
             if (response.data.success) {
                 setUsers(response.data.data);
             } else {
@@ -69,10 +73,12 @@ const UserManagement = () => {
     const confirmAction = async () => {
         try {
             if (actionType === 'delete') {
-                await axios.delete(`/api/admin/users/${selectedUser}`);
+                setupAxiosAuth();
+                await axios.delete(`/admin/users/${selectedUser}`);
                 toast.success('User deleted successfully');
             } else {
-                await axios.patch(`/api/admin/users/${selectedUser}/status`, {
+                setupAxiosAuth();
+                await axios.patch(`/admin/users/${selectedUser}/status`, {
                     status: actionType,
                     reason
                 });
@@ -93,7 +99,8 @@ const UserManagement = () => {
 
     const handleStatusChange = async (userId, newStatus, reason = '') => {
         try {
-            const response = await axios.patch(`/api/admin/users/${userId}/status`, {
+            setupAxiosAuth();
+            const response = await axios.patch(`/admin/users/${userId}/status`, {
                 status: newStatus,
                 reason
             });
@@ -110,7 +117,8 @@ const UserManagement = () => {
 
     const handleDeleteUser = async (userId) => {
         try {
-            const response = await axios.delete(`/api/admin/users/${userId}`);
+            setupAxiosAuth();
+            const response = await axios.delete(`/admin/users/${userId}`);
             if (response.data.success) {
                 toast.success('User deleted successfully');
                 fetchUsers(); // Refresh the user list
