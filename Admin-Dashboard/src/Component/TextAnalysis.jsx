@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import config from '../config';
 
 const TextAnalysis = () => {
     const [text, setText] = useState('');
@@ -16,7 +17,7 @@ const TextAnalysis = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:8002/api/analyze-text', {
+            const response = await fetch(`${config.API_BASE_URL}/analyze-text`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import config from '../config';
 
 const CaptionAnalysis = () => {
     const [caption, setCaption] = useState('');
@@ -16,7 +17,7 @@ const CaptionAnalysis = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:8002/api/analyze-caption', {
+            const response = await fetch(`${config.API_BASE_URL}/analyze-caption`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

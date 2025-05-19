@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 const CommentsModal = ({ isOpen, onClose }) => {
     const [comments, setComments] = useState([]);
@@ -9,7 +10,7 @@ const CommentsModal = ({ isOpen, onClose }) => {
     useEffect(() => {
         const fetchComments = async () => {
             try {
-                const response = await fetch('http://localhost:8002/api/admin/comments');
+                const response = await fetch(`${config.API_BASE_URL}/admin/comments`);
                 const data = await response.json();
 
                 if (!data.success) {
@@ -35,7 +36,7 @@ const CommentsModal = ({ isOpen, onClose }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8002/api/admin/comments/${commentId}`, {
+            const response = await fetch(`${config.API_BASE_URL}/admin/comments/${commentId}`, {
                 method: 'DELETE',
             });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 const PostModeration = () => {
     const [posts, setPosts] = useState([]);
@@ -15,7 +16,7 @@ const PostModeration = () => {
 
     const fetchPosts = async () => {
         try {
-            const response = await fetch('http://localhost:8002/api/admin/posts');
+            const response = await fetch(`${config.API_BASE_URL}/admin/posts`);
             const data = await response.json();
 
             if (!data.success) {
@@ -36,7 +37,7 @@ const PostModeration = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8002/api/admin/posts/${postId}`, {
+            const response = await fetch(`${config.API_BASE_URL}/admin/posts/${postId}`, {
                 method: 'DELETE'
             });
             const data = await response.json();
@@ -54,7 +55,7 @@ const PostModeration = () => {
 
     const handleUpdateStatus = async (postId, status) => {
         try {
-            const response = await fetch(`http://localhost:8002/api/admin/posts/${postId}/status`, {
+            const response = await fetch(`${config.API_BASE_URL}/admin/posts/${postId}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -76,7 +77,7 @@ const PostModeration = () => {
 
     const handleViewComments = async (postId) => {
         try {
-            const response = await fetch(`http://localhost:8002/api/admin/posts/${postId}/comments`);
+            const response = await fetch(`${config.API_BASE_URL}/admin/posts/${postId}/comments`);
             const data = await response.json();
 
             if (!data.success) {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import config from '../config';
 
 const CommentAnalysis = () => {
     const [comment, setComment] = useState('');
@@ -14,7 +15,7 @@ const CommentAnalysis = () => {
 
     const fetchComments = async () => {
         try {
-            const response = await fetch('http://localhost:8002/api/comments');
+            const response = await fetch(`${config.API_BASE_URL}/comments`);
             const data = await response.json();
             if (data.success) {
                 setComments(data.comments);
@@ -34,7 +35,7 @@ const CommentAnalysis = () => {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:8002/api/analyze-comment', {
+            const response = await fetch(`${config.API_BASE_URL}/analyze-comment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ const CommentAnalysis = () => {
             setResult(data.analysis);
 
             // Store the comment with its analysis
-            const storeResponse = await fetch('http://localhost:8002/api/comments', {
+            const storeResponse = await fetch(`${config.API_BASE_URL}/comments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ const CommentAnalysis = () => {
 
     const handleDeleteComment = async (commentId) => {
         try {
-            const response = await fetch(`http://localhost:8002/api/comments/${commentId}`, {
+            const response = await fetch(`${config.API_BASE_URL}/comments/${commentId}`, {
                 method: 'DELETE',
             });
 

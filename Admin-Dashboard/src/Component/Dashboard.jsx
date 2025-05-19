@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 import UserDetailsModal from './UserDetailsModal';
 import CommentsModal from './CommentsModal';
 import PostsModal from './PostsModal';
@@ -22,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://localhost:8002/api/admin/analysis');
+        const response = await fetch(`${config.API_BASE_URL}/admin/analysis`);
         const data = await response.json();
 
         if (!data.success) {
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
   const handleAnalysisClick = async (type) => {
     try {
-      const response = await fetch(`http://localhost:8002/api/admin/analysis/${type}`);
+      const response = await fetch(`${config.API_BASE_URL}/admin/analysis/${type}`);
       const data = await response.json();
 
       if (!data.success) {

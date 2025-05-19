@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import config from '../config';
 
 const PostsModal = ({ isOpen, onClose }) => {
     const [posts, setPosts] = useState([]);
@@ -12,7 +13,7 @@ const PostsModal = ({ isOpen, onClose }) => {
         const fetchData = async () => {
             try {
                 // Fetch posts
-                const postsResponse = await fetch('http://localhost:8002/api/admin/posts');
+                const postsResponse = await fetch(`${config.API_BASE_URL}/admin/posts`);
                 const postsData = await postsResponse.json();
 
                 if (!postsData.success) {
@@ -22,7 +23,7 @@ const PostsModal = ({ isOpen, onClose }) => {
                 setPosts(postsData.data);
 
                 // Fetch users
-                const usersResponse = await fetch('http://localhost:8002/api/admin/users');
+                const usersResponse = await fetch(`${config.API_BASE_URL}/admin/users`);
                 const usersData = await usersResponse.json();
 
                 if (!usersData.success) {

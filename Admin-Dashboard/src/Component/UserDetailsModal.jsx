@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import config from '../config';
 
 const UserDetailsModal = ({ isOpen, onClose }) => {
     const [users, setUsers] = useState([]);
@@ -8,7 +9,7 @@ const UserDetailsModal = ({ isOpen, onClose }) => {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch('http://localhost:8002/api/admin/users');
+                const response = await fetch(`${config.API_BASE_URL}/admin/users`);
                 const data = await response.json();
 
                 if (!data.success) {
@@ -79,8 +80,8 @@ const UserDetailsModal = ({ isOpen, onClose }) => {
                                             <p className="font-medium">
                                                 <span
                                                     className={`px-2 py-1 rounded-full text-xs ${user.isActive
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
                                                         }`}
                                                 >
                                                     {user.isActive ? 'Active' : 'Inactive'}
