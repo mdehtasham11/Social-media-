@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const http = require("http");
 const cors = require("cors");
 require("dotenv").config();
 const dns = require("dns");
@@ -15,6 +16,8 @@ const userRoute = require("./src/routes/user.routes");
 const analyzeRoutes = require("./routes/analyze.routes");
 const adminRoutes = require("./src/routes/admin.routes");
 const commentsRoutes = require("./routes/comments.routes");
+const chatRoutes = require("./src/routes/chat.routes");
+const initializeChatSocket = require("./src/socket/chatSocket");
 
 app.use(
   cors({
@@ -34,6 +37,7 @@ handleDatabaseConnection(process.env.MONGO_URI)
 
 app.use("/api/auth", authRoute);
 app.use("/api/user", userRoute);
+app.use("/api/chat", chatRoutes);
 app.use("/api", analyzeRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/comments", commentsRoutes);
@@ -65,6 +69,9 @@ process.on("uncaughtException", (error) => {
   process.exit(1);
 });
 
-app.listen(port, () => {
+const server = http.createServer(app);
+initializeChatSocket(server);
+
+server.listen(port, () => {
   console.log(`meet started on port ${port}`);
 });

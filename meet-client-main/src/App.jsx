@@ -8,6 +8,7 @@ import Notification from "./pages/Notification";
 import Profile from "./pages/Profile";
 import AddPeople from "./pages/AddPeople";
 import SinglePost from "./pages/SinglePost";
+import Chat from "./pages/Chat";
 
 const App = () => {
   return (
@@ -29,6 +30,7 @@ const App = () => {
         element={<Protected element={<SinglePost />} />}
       />
       <Route path="/add" element={<Protected element={<AddPeople />} />} />
+      <Route path="/chat" element={<Protected element={<Chat />} />} />
     </Routes>
   );
 };
