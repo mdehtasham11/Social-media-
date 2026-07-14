@@ -21,10 +21,7 @@ exports.user = asyncHandler(async (req, res, next) => {
   let data;
   try {
     data = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("JWT Token data:", data);
-    console.log("JWT Token role:", data.role);
   } catch (error) {
-    console.log("JWT verification failed:", error.message);
     throw new ApiError(
       401,
       "Invalid or expired token"
@@ -39,17 +36,11 @@ exports.user = asyncHandler(async (req, res, next) => {
   }
 
   if (data.role !== "user" && data.role !== "admin") {
-    console.log("Role mismatch - Expected: 'user' or 'admin', Got:", data.role);
     throw new ApiError(400, "Only users and admins have the access");
   }
 
-  let user = await User.findById({ _id: data.id }).select("-password");
-
-  if (!user) {
-    throw new ApiError(404, "No user found.");
-  }
-
-  req.user = user;
+  // Use JWT payload directly instead of hitting DB on every request
+  req.user = { _id: data.id, id: data.id, role: data.role };
   next();
 });
 

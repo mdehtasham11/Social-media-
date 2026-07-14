@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "react-router-dom";
@@ -8,108 +8,50 @@ import { useRecoilState } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { getMediaUrl } from "../../utils/mediaUrl";
 import { Camera } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../lib/api";
+import { useState } from "react";
 
 const ProfileGrid = () => {
-  const [user, setUser] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [profileUploading, setProfileUploading] = useState(false);
-  const [likes, setLikes] = useState(0);
   const { id } = useParams();
   const [userDetail, setUserDetail] = useRecoilState(userSelectorState);
+  const queryClient = useQueryClient();
 
-  const handleAllLikes = () => {
-    // The backend returns { user, posts } structure
-    console.log("handleAllLikes - user object:", user);
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ["profile", id],
+    queryFn: () => api(`/api/user/profile/${id}`).then((r) => r.data),
+  });
+
+  const user = profileData || {};
+  const likes = useMemo(() => {
     const posts = user?.posts || [];
-    console.log("handleAllLikes - posts array:", posts);
-    if (Array.isArray(posts)) {
-      const sum = posts.reduce((accumulator, item) => {
-        return accumulator + (item.likeCount || 0);
-      }, 0);
-      setLikes(sum);
-    } else {
-      console.error("User posts are not an array or are undefined");
-    }
-  };
+    if (!Array.isArray(posts)) return 0;
+    return posts.reduce((acc, item) => acc + (item.likeCount || 0), 0);
+  }, [user]);
 
-  const handleGetUser = async () => {
-    console.log("Fetching profile for user ID:", id);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/profile/${id}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const userData = await response.json();
-      console.log("Profile data received:", userData);
-      console.log("User data structure:", userData.data);
-      setUser(userData.data);
-      setLoading(true);
-    } catch (error) {
-      toast.error("Internal server error");
-      console.log(error);
-    }
-  };
-
-  const handleGetMyProfile = async () => {
-    const uId = userDetail._id;
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/profile/${uId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const data = await response.json();
-      setUserDetail({ user: data.data.user });
-      return true;
-    } catch (error) {
-      toast.error("Internal server error");
-      console.log(error);
-    }
-  };
-
-  const handleAddFriends = async (userId) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/addFriends`,
-        {
-          method: "POST",
-          body: JSON.stringify({ friendId: userId }),
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Can not add right now");
-        return;
-      }
+  const addFriendMutation = useMutation({
+    mutationFn: (userId) =>
+      api("/api/user/addFriends", {
+        method: "POST",
+        body: JSON.stringify({ friendId: userId }),
+      }),
+    onSuccess: async () => {
       toast.success("Added to friend list");
-      await handleGetMyProfile();
-      await handleGetUser();
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
+      // Refresh both profile and own profile
+      queryClient.invalidateQueries({ queryKey: ["profile", id] });
+      // Refresh own profile for friendList check
+      try {
+        const myData = await api(`/api/user/profile/${userDetail._id}`);
+        setUserDetail({ user: myData.data.user });
+      } catch {
+        // silently fail
+      }
+    },
+    onError: () => {
+      toast.error("Can not add right now");
+    },
+  });
 
   const handleProfilePictureChange = async (event) => {
     const file = event.target.files?.[0];
@@ -120,50 +62,28 @@ const ProfileGrid = () => {
 
     try {
       setProfileUploading(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/profile-picture`,
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        }
+      const data = await api("/api/user/profile-picture", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Update cache and recoil state
+      queryClient.setQueryData(["profile", id], (old) =>
+        old ? { ...old, user: data.data } : old
       );
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        toast.error(data.message || "Could not update profile picture");
-        return;
-      }
-
-      const data = await response.json();
-      setUser((current) => ({
-        ...current,
-        user: data.data,
-      }));
       setUserDetail({ user: data.data });
       toast.success("Profile picture updated");
-    } catch (error) {
-      toast.error("Internal server error");
+    } catch {
+      toast.error("Could not update profile picture");
     } finally {
       setProfileUploading(false);
       event.target.value = "";
     }
   };
 
-  useEffect(() => {
-    handleGetUser();
-  }, [id]);
-
-  useEffect(() => {
-    if (user && Object.keys(user).length > 0) {
-      handleAllLikes();
-    }
-  }, [user]);
   return (
     <div className="flex-1 h-screen lg:mx-4 lg:my-4 bg-white py-4 px-4 mb-20 md:mb-20 lg:px-5 rounded-lg shadow-lg overflow-y-auto no-scrollbar">
-      {!loading ? (
+      {isLoading ? (
         <>
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
@@ -236,7 +156,10 @@ const ProfileGrid = () => {
                 </div>
               </div>
               {user.user._id !== userDetail?._id && (
-                <Button onClick={() => handleAddFriends(user.user._id)}>
+                <Button
+                  onClick={() => addFriendMutation.mutate(user.user._id)}
+                  disabled={addFriendMutation.isPending}
+                >
                   {userDetail?.friendList &&
                   userDetail.friendList.some(
                     (friendId) => friendId === user.user._id
@@ -265,30 +188,25 @@ const ProfileGrid = () => {
                 <p className="text-gray-600">Likes</p>
               </div>
             </div>
-            {(() => {
-              console.log("Render - user object:", user);
-              console.log("Render - user.posts:", user?.posts);
-              console.log("Render - posts length:", (user?.posts || []).length);
-              return (user.posts || []).length > 0 ? (
-                <div className="grid grid-cols-3 gap-4">
-                  {(user.posts || []).map((item) => (
-                    <div key={item._id} className="relative group">
-                      <Link to={`/post/${item._id}`}>
-                        <img
-                          className="w-full h-48 object-cover rounded transform group-hover:scale-105 transition duration-300"
-                          src={getMediaUrl(item.image)}
-                          alt={item._id}
-                        />
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex-1 lg:mx-4 lg:my-4 bg-white py-4 px-4 mb-20 lg:px-60 rounded-lg shadow-lg overflow-y-auto no-scrollbar">
-                  <p className="text-center">No posts to show</p>
-                </div>
-              );
-            })()}
+            {(user.posts || []).length > 0 ? (
+              <div className="grid grid-cols-3 gap-4">
+                {(user.posts || []).map((item) => (
+                  <div key={item._id} className="relative group">
+                    <Link to={`/post/${item._id}`}>
+                      <img
+                        className="w-full h-48 object-cover rounded transform group-hover:scale-105 transition duration-300"
+                        src={getMediaUrl(item.image)}
+                        alt={item._id}
+                      />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 lg:mx-4 lg:my-4 bg-white py-4 px-4 mb-20 lg:px-60 rounded-lg shadow-lg overflow-y-auto no-scrollbar">
+                <p className="text-center">No posts to show</p>
+              </div>
+            )}
           </>
         )
       )}

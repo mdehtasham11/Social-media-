@@ -68,5 +68,9 @@ const postSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for frequently queried fields
+postSchema.index({ createdBy: 1, createdAt: -1 }); // feed & profile queries
+postSchema.index({ visibility: 1, createdAt: -1 }); // explore page
+
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;

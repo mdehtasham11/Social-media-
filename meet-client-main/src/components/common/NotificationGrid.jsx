@@ -1,42 +1,17 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Heart, MessageCircle } from "lucide-react";
-import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { handleDate } from "../../functions/dateFormat";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
 
 const NotificationGrid = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const handleGetNotification = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/notification/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const { data } = await response.json();
-      setNotifications(data);
-      setLoading(false);
-    } catch (error) {
-      toast.error("Internal server error");
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    handleGetNotification();
-  }, []);
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => api("/api/user/notification/").then((r) => r.data),
+  });
 
   const renderIcon = (type) => {
     switch (type) {
@@ -53,7 +28,7 @@ const NotificationGrid = () => {
     <div className="flex-1 lg:mx-4 lg:my-4 bg-white py-4 px-4 mb-20 lg:px-60 rounded-lg shadow-lg overflow-y-auto no-scrollbar">
       <h2 className="text-2xl font-bold mb-4">Notifications</h2>
       <div className="space-y-4">
-        {loading ? (
+        {isLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg shadow-sm">
               <Skeleton className="w-10 h-10 rounded-full" />

@@ -1,73 +1,47 @@
 import { Heart, MessageCircle, Share2, Bookmark, UserPlus, EarthIcon, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { handleDate } from "../../functions/dateFormat";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import { api } from "../../lib/api";
 
 const Feed = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [like, setLike] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleGetPost = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/feed`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ["feed"],
+    queryFn: () => api("/api/user/feed").then((r) => r.data),
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (postId) =>
+      api(`/api/user/like/${postId}`, { method: "GET" }),
+    onMutate: async (postId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["feed"] });
+      // Snapshot the previous value
+      const previous = queryClient.getQueryData(["feed"]);
+      // Optimistically update
+      queryClient.setQueryData(["feed"], (old) =>
+        (old || []).map((p) =>
+          p._id === postId ? { ...p, likeCount: p.likeCount + 1 } : p
+        )
       );
-
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const postData = await response.json();
-      setPosts(postData.data);
-      console.log(postData.data);
-      setLoading(true);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
-
-  const handleLike = async (postId) => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/like/${postId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        toast.error("Already liked");
-        return;
-      }
-      setLike(!like);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  }
-  useEffect(() => {
-    handleGetPost();
-  }, [like]);
+      return { previous };
+    },
+    onError: (_err, _postId, context) => {
+      // Roll back on error
+      queryClient.setQueryData(["feed"], context?.previous);
+      toast.error("Already liked");
+    },
+  });
 
   return (
     <>
       <Toaster position="top-right" duration="4000" />
-      {!loading ? (
+      {isLoading ? (
         <div className="flex-1 lg:mx-4 lg:my-4 bg-white py-4 px-4 mb-20 lg:px-60 rounded-lg shadow-lg overflow-y-auto no-scrollbar">
           <div className="flex items-center justify-between py-2">
             <h2 className="text-xl font-bold mb-4">Feed</h2>
@@ -126,7 +100,7 @@ const Feed = () => {
               </Link>
               <div className="flex justify-between items-center mb-5 mt-5">
                 <div className="flex items-center">
-                  <Heart onClick={()=> handleLike(post._id)} className="mr-2 text-red-500 cursor-pointer" />
+                  <Heart onClick={() => likeMutation.mutate(post._id)} className="mr-2 text-red-500 cursor-pointer" />
                   <span>{post.likeCount}</span>
                   <Link to={`post/${post._id}`}>
                     <MessageCircle className="ml-4 mr-2 cursor-pointer" />

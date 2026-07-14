@@ -76,17 +76,13 @@ exports.handleUpdateProfilePicture = asyncHandler(async (req, res) => {
 exports.handleGetProfile = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const user = await User.findById({ _id: id });
+  const user = await User.findById(id).select("-password").lean();
 
   if (!user) {
     throw new ApiError(404, `User not found`);
   }
 
-  const posts = await Post.find({ createdBy: id });
-
-  console.log("Backend - User ID:", id);
-  console.log("Backend - Posts found:", posts.length);
-  console.log("Backend - Posts:", posts);
+  const posts = await Post.find({ createdBy: id }).sort({ createdAt: -1 }).lean();
 
   const updatedPost = { user, posts };
 
@@ -96,27 +92,25 @@ exports.handleGetProfile = asyncHandler(async (req, res) => {
 });
 
 exports.handleGetExplorePage = asyncHandler(async (req, res) => {
-  const posts = await Post.find({ visibility: "public" });
+  const posts = await Post.find({ visibility: "public" }).sort({ createdAt: -1 }).lean();
 
   if (posts.length === 0) {
     return res
       .status(200)
-      .json(new ApiResponse(200, post, "All public post fetched"));
+      .json(new ApiResponse(200, [], "All public post fetched"));
   }
 
   const userId = posts.map((item) => item.createdBy);
   const postUser = await User.find({ _id: { $in: userId } }).select(
     "-password"
-  );
+  ).lean();
 
   const postWithUser = posts.map((post) => {
-    const user = postUser.map((u) => {
-      if (u._id.toString() === post.createdBy.toString()) {
-        return u;
-      }
-    });
+    const user = postUser.find(
+      (u) => u._id.toString() === post.createdBy.toString()
+    );
     return {
-      ...post.toObject(),
+      ...post,
       user,
     };
   });
@@ -190,34 +184,34 @@ exports.handleAddFriends = asyncHandler(async (req, res) => {
 exports.handleGetFeed = asyncHandler(async (req, res) => {
   const { id } = req.user;
 
-  const user = await User.findById(id);
+  const user = await User.findById(id).select("friendList").lean();
   if (!user) throw new ApiError(404, "User not found");
 
   const friendList = user.friendList;
 
   const posts = await Post.find({
     createdBy: { $in: [...friendList, id] },
-  }).sort({ createdAt: -1 });
+  }).sort({ createdAt: -1 }).lean();
   if (posts.length === 0)
     return res
       .status(200)
       .json(new ApiResponse(200, posts, "All post fetched successfully"));
 
-  const userId = posts.map((item) => item.createdBy.toString());
+  const userId = [...new Set(posts.map((item) => item.createdBy.toString()))];
 
   const postUser = await User.find({ _id: { $in: userId } }).select(
     "-password"
+  ).lean();
+
+  // Build a lookup map instead of .find() in a loop
+  const userMap = Object.fromEntries(
+    postUser.map((u) => [u._id.toString(), u])
   );
 
-  const postWithUser = posts.map((post) => {
-    const user = postUser.find(
-      (u) => u._id.toString() === post.createdBy.toString()
-    );
-    return {
-      ...post.toObject(),
-      user: user,
-    };
-  });
+  const postWithUser = posts.map((post) => ({
+    ...post,
+    user: userMap[post.createdBy.toString()],
+  }));
 
   return res
     .status(200)

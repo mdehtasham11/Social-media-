@@ -1,47 +1,21 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../../lib/api";
+
 const ExploreGrid = () => {
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const handleGetImages = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/explore`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-
-      const postData = await response.json();
-      setImages(postData.data);
-      setLoading(true);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
-
-  useEffect(() => {
-    handleGetImages();
-  }, []);
+  const { data: images = [], isLoading } = useQuery({
+    queryKey: ["explore"],
+    queryFn: () => api("/api/user/explore").then((r) => r.data),
+  });
 
   return (
     <>
       <Toaster position="top-right" duration="4000" />
       <div className="flex flex-wrap gap-2 justify-center">
-        {!loading ? (
+        {isLoading ? (
           [1, 2, 3, 4, 5, 6].map((_, index) => (
             <div
               key={index}

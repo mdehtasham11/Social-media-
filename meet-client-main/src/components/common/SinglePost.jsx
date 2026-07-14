@@ -1,103 +1,63 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EarthIcon, Heart, MessageCircle, Share, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecoilValue } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { getMediaUrl } from "../../utils/mediaUrl";
-// import { handleDate } from "../../functions/dateFormat";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../lib/api";
 
 const SinglePost = () => {
-  const [post, setPost] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [handleUserAction, setHandleUserAction] = useState(false);
   const user = useRecoilValue(userSelectorState);
-
   const { id } = useParams();
+  const queryClient = useQueryClient();
+
+  const { data: post } = useQuery({
+    queryKey: ["post", id],
+    queryFn: () => api(`/api/user/post/${id}`).then((r) => r.data),
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (postId) =>
+      api(`/api/user/like/${postId}`, { method: "GET" }),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["post", id] });
+      const previous = queryClient.getQueryData(["post", id]);
+      queryClient.setQueryData(["post", id], (old) =>
+        old ? { ...old, likeCount: old.likeCount + 1 } : old
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(["post", id], context?.previous);
+      toast.error("Already liked");
+    },
+  });
+
+  const commentMutation = useMutation({
+    mutationFn: (comment) =>
+      api(`/api/user/comment/${id}`, {
+        method: "POST",
+        body: JSON.stringify({ comment }),
+      }),
+    onSuccess: () => {
+      toast.success("Comment posted");
+      setNewComment("");
+      // Refetch to get the new comment with user data
+      queryClient.invalidateQueries({ queryKey: ["post", id] });
+    },
+    onError: () => {
+      toast.error("Error posting comment");
+    },
+  });
 
   const handleCommentChange = (e) => {
     setNewComment(e.target.value);
   };
-
-  const handleCommentSubmit = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/comment/${id}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ comment: newComment }),
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      toast.success("Comment posted");
-      setNewComment("");
-      setHandleUserAction(!handleUserAction);
-    } catch (error) {
-      toast.error("Internal server error");
-      console.log(error);
-    }
-  };
-
-  const handleGetPost = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/post/${id}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const postData = await response.json();
-      setPost(postData.data);
-      console.log(postData.data);
-    } catch (error) {
-      toast.error("Internal server error");
-      console.log(error);
-    }
-  };
-
-  const handleLike = async (postUId) => {
-    console.log(postUId);
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/like/${postUId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        toast.error("Already liked");
-        return;
-      }
-      setHandleUserAction(!handleUserAction);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
-
-  useEffect(() => {
-    handleGetPost();
-  }, [handleUserAction]);
 
   return (
     <>
@@ -140,7 +100,7 @@ const SinglePost = () => {
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-full hover:bg-gray-100 transition">
                 <Heart
-                  onClick={() => handleLike(id)}
+                  onClick={() => likeMutation.mutate(id)}
                   className="w-7 h-7 text-red-500"
                 />
               </button>
@@ -160,9 +120,6 @@ const SinglePost = () => {
               <span className="font-bold text-gray-950">{post.userName}</span>{" "}
               {post.caption}
             </p>
-            {/* <p className="text-gray-500 mt-2">
-              Posted {handleDate(post.createdAt)}
-            </p> */}
             <p className="text-gray-500 mt-2">
               {post.comments.length} comments
             </p>
@@ -187,8 +144,9 @@ const SinglePost = () => {
                 placeholder="Add a comment..."
               />
               <button
-                onClick={handleCommentSubmit}
-                className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                onClick={() => commentMutation.mutate(newComment)}
+                disabled={commentMutation.isPending || !newComment.trim()}
+                className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
               >
                 Post
               </button>

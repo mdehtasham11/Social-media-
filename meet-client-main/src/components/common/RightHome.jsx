@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,62 +6,33 @@ import { Link } from "react-router-dom";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { useRecoilValue } from "recoil";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "../../lib/api";
 
 const RightHome = () => {
-  const [people, setPeople] = useState([]);
-  const [addedFriend, setAddedFriend] = useState(false);
   const user = useRecoilValue(userSelectorState);
+  const queryClient = useQueryClient();
 
-  const handleGetPeople = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/people`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Error while fetching data");
-        return;
-      }
-      const peopleData = await response.json();
-      setPeople(peopleData.data);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
+  const { data: people = [] } = useQuery({
+    queryKey: ["people"],
+    queryFn: () => api("/api/user/people").then((r) => r.data),
+  });
 
-  const handleAddFriends = async (userId) => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/api/user/addFriends`,
-        {
-          method: "POST",
-          body: JSON.stringify({ friendId: userId }),
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token"),
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response.ok) {
-        toast.error("Can not add right now");
-        return;
-      }
+  const addFriendMutation = useMutation({
+    mutationFn: (userId) =>
+      api("/api/user/addFriends", {
+        method: "POST",
+        body: JSON.stringify({ friendId: userId }),
+      }),
+    onSuccess: () => {
       toast.success("Added to friend list");
-      setAddedFriend(!addedFriend);
-    } catch (error) {
-      toast.error("Internal server error");
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: ["people"] });
+    },
+    onError: () => {
+      toast.error("Can not add right now");
+    },
+  });
 
-  useEffect(() => {
-    handleGetPeople();
-  }, [addedFriend, user]);
   return (
     <>
       <Toaster position="top-right" duration="4000" />
@@ -91,38 +61,36 @@ const RightHome = () => {
         </div>
         {people.length > 0 ? (
           <div className="mt-6 w-full">
-            {people &&
-              people.map((item) => (
-                <div
-                  className="flex items-center justify-between w-full mb-4"
-                  key={item._id}
+            {people.map((item) => (
+              <div
+                className="flex items-center justify-between w-full mb-4"
+                key={item._id}
+              >
+                <Link to={`/profile/${item._id}`}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="relative w-8 h-8 rounded-full overflow-hidden">
+                      <AvatarImage
+                        src={getMediaUrl(item.profile, "https://github.com/shadcn.png")}
+                        alt={item.userName || "@shadcn"}
+                        className="object-cover w-full h-full"
+                      />
+                      <AvatarFallback className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-700">
+                        {item.userName
+                          ? item.userName[0].toUpperCase()
+                          : "CN"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-sm font-semibold">{item.userName}</p>
+                  </div>
+                </Link>
+                <Button
+                  onClick={() => addFriendMutation.mutate(item._id)}
+                  disabled={addFriendMutation.isPending}
                 >
-                  <Link to={`/profile/${item._id}`}>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="relative w-8 h-8 rounded-full overflow-hidden">
-                        <AvatarImage
-                          src={getMediaUrl(item.profile, "https://github.com/shadcn.png")}
-                          alt={item.userName || "@shadcn"}
-                          className="object-cover w-full h-full"
-                        />
-                        <AvatarFallback className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-700">
-                          {item.userName
-                            ? item.userName[0].toUpperCase()
-                            : "CN"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <p className="text-sm font-semibold">{item.userName}</p>
-                    </div>
-                  </Link>
-                  <Button
-                    onClick={() => {
-                      handleAddFriends(item._id);
-                    }}
-                  >
-                    Connect
-                  </Button>
-                </div>
-              ))}
+                  Connect
+                </Button>
+              </div>
+            ))}
             <p className="text-blue-500">See All</p>
           </div>
         ) : (
