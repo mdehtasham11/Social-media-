@@ -18,7 +18,18 @@ exports.user = asyncHandler(async (req, res, next) => {
       "You are not logged in. Please login to get access"
     );
   }
-  const data = jwt.verify(token, process.env.JWT_SECRET);
+  let data;
+  try {
+    data = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("JWT Token data:", data);
+    console.log("JWT Token role:", data.role);
+  } catch (error) {
+    console.log("JWT verification failed:", error.message);
+    throw new ApiError(
+      401,
+      "Invalid or expired token"
+    );
+  }
 
   if (!data) {
     throw new ApiError(
@@ -27,8 +38,9 @@ exports.user = asyncHandler(async (req, res, next) => {
     );
   }
 
-  if (data.role !== "user") {
-    throw new ApiError(400, "Only users have the access");
+  if (data.role !== "user" && data.role !== "admin") {
+    console.log("Role mismatch - Expected: 'user' or 'admin', Got:", data.role);
+    throw new ApiError(400, "Only users and admins have the access");
   }
 
   let user = await User.findById({ _id: data.id }).select("-password");
@@ -55,7 +67,16 @@ exports.admin = asyncHandler(async (req, res, next) => {
       "You are not logged in. Please login to get access"
     );
   }
-  const data = jwt.verify(token, process.env.JWT_SECRET);
+  let data;
+  try {
+    data = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    console.log("JWT verification failed:", error.message);
+    throw new ApiError(
+      401,
+      "Invalid or expired token"
+    );
+  }
 
   if (!data) {
     throw new ApiError(

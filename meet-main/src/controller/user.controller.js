@@ -1,5 +1,4 @@
-const fs = require("fs");
-const cloudinary = require("../storage/cloudnary");
+const { uploadLocalFile } = require("../storage/cloudnary");
 const { asyncHandler } = require("../common/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -18,7 +17,7 @@ exports.handlePostUpload = asyncHandler(async (req, res) => {
   if (!caption) missingField.push("caption");
   if (!req.file) missingField.push("image");
 
-  if (missingField.length > 1) {
+  if (missingField.length > 0) {
     throw new ApiError(
       400,
       `Missing required fields: ${missingField.join(",")}`
@@ -27,9 +26,11 @@ exports.handlePostUpload = asyncHandler(async (req, res) => {
 
   let imageUrl = "";
   if (req.file) {
-    const imageUrlResponse = await cloudinary.uploader.upload(req.file.path);
+    const imageUrlResponse = await uploadLocalFile(
+      req.file,
+      `${req.protocol}://${req.get("host")}`
+    );
     imageUrl = imageUrlResponse.secure_url;
-    fs.unlinkSync(req.file.path);
   }
 
   const data = await Post.create({
@@ -55,7 +56,11 @@ exports.handleGetProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, `User not found`);
   }
 
-  const posts = await Post.find({ createdBy: id }).select("-password");
+  const posts = await Post.find({ createdBy: id });
+
+  console.log("Backend - User ID:", id);
+  console.log("Backend - Posts found:", posts.length);
+  console.log("Backend - Posts:", posts);
 
   const updatedPost = { user, posts };
 
@@ -299,8 +304,11 @@ exports.handlePostComment = asyncHandler(async (req, res) => {
   } catch (error) {
     console.error("Error analyzing comment:", error.message);
     // If it's an API key error, return a specific error message
-    if (error.message.includes('API key')) {
-      throw new ApiError(500, "Comment analysis service is not properly configured. Please contact the administrator.");
+    if (error.message.includes("API key")) {
+      throw new ApiError(
+        500,
+        "Comment analysis service is not properly configured. Please contact the administrator."
+      );
     }
     // For other errors, continue with comment creation without analysis
   }
@@ -309,7 +317,7 @@ exports.handlePostComment = asyncHandler(async (req, res) => {
     user: id,
     post: postId,
     comment: comment.trim(),
-    analysis
+    analysis,
   });
 
   if (!comments) throw new ApiError(500, "Error while creating comment");

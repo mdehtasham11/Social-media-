@@ -6,6 +6,7 @@ import { useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecoilValue } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
+import { getMediaUrl } from "../../utils/mediaUrl";
 // import { handleDate } from "../../functions/dateFormat";
 
 const SinglePost = () => {
@@ -105,7 +106,7 @@ const SinglePost = () => {
           <div className="flex items-center p-4 border-b border-gray-300">
             <Avatar className="w-14 h-14 rounded-full overflow-hidden">
               <AvatarImage
-                src={post.profile}
+                src={getMediaUrl(post.profile)}
                 alt={post._id}
                 className="object-cover w-full h-full"
               />
@@ -130,7 +131,7 @@ const SinglePost = () => {
           </div>
           <div className="relative">
             <img
-              src={post.image}
+              src={getMediaUrl(post.image)}
               alt="Post"
               className="w-full h-[500px] object-cover rounded-t-xl border-b border-gray-200"
             />
@@ -173,7 +174,7 @@ const SinglePost = () => {
                   YOU
                 </AvatarFallback>
                 <AvatarImage
-                  src={user.profile}
+                  src={getMediaUrl(user.profile)}
                   alt={user._id}
                   className="object-cover w-full h-full"
                 />
@@ -201,7 +202,7 @@ const SinglePost = () => {
                         {comment.user.userName[0].toUpperCase()}
                       </AvatarFallback>
                       <AvatarImage
-                        src={comment.user.profile}
+                        src={getMediaUrl(comment.user.profile)}
                         alt={comment.user._id}
                         className="object-cover w-full h-full"
                       />

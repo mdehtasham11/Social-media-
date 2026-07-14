@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useParams } from "react-router-dom";
 import { useRecoilState } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 export const FriendList = ({userId}) => {
   const [followers, setFollowers] = useState([]);
@@ -115,9 +116,9 @@ export const FriendList = ({userId}) => {
        followers.map((follower) => (
          <div key={follower.id} className="flex items-center space-x-4 p-4 border rounded-lg shadow-sm">
            <img
-             src={follower.profile}
+             src={getMediaUrl(follower.profile, "https://github.com/shadcn.png")}
              alt={follower.username}
-             className="w-10 h-10 rounded-full"
+             className="w-10 h-10 rounded-full object-cover"
            />
            <div className="flex-1">
              <p className="font-semibold text-lg">{follower.name}</p>

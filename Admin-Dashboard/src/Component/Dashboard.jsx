@@ -23,7 +23,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${config.API_BASE_URL}/admin/analysis`);
+        const response = await fetch(`${config.API_BASE_URL}/api/admin/analysis`);
         const data = await response.json();
 
         if (!data.success) {
@@ -43,7 +43,7 @@ const Dashboard = () => {
 
   const handleAnalysisClick = async (type) => {
     try {
-      const response = await fetch(`${config.API_BASE_URL}/admin/analysis/${type}`);
+      const response = await fetch(`${config.API_BASE_URL}/api/admin/analysis/${type}`);
       const data = await response.json();
 
       if (!data.success) {

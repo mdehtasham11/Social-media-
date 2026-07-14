@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useRecoilValue, useSetRecoilState } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { Button } from "@/components/ui/button";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 const LeftHome = () => {
   const user = useRecoilValue(userSelectorState);
@@ -54,7 +55,7 @@ const LeftHome = () => {
         className="flex items-center gap-3 mb-6 w-full cursor-pointer hover:bg-blue-500 py-2 px-3 hover:text-white rounded-lg transition-all duration-200"
       >
         <Avatar>
-          <AvatarImage src={user.profile} alt="@shadcn" />
+          <AvatarImage src={getMediaUrl(user.profile)} alt="@shadcn" />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
         <p className="text-xl font-semibold">Profile</p>

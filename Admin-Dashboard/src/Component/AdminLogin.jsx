@@ -26,7 +26,7 @@ const AdminLogin = () => {
         }
         try {
             setLoading(true);
-            const response = await axios.post(`${config.API_BASE_URL}/auth/login-admin`, {
+            const response = await axios.post(`${config.API_BASE_URL}/api/auth/login-admin`, {
                 userName,
                 password,
             });

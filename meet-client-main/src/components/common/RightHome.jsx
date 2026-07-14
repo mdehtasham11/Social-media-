@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { useRecoilValue } from "recoil";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 const RightHome = () => {
   const [people, setPeople] = useState([]);
@@ -69,7 +70,7 @@ const RightHome = () => {
         <div className="flex items-start gap-4 mb-6 w-full cursor-pointer">
           <Avatar className="relative w-12 h-12 rounded-full overflow-hidden">
             <AvatarImage
-              src={user.profile}
+              src={getMediaUrl(user.profile)}
               alt="@shadcn"
               className="object-cover w-full h-full"
             />
@@ -100,7 +101,7 @@ const RightHome = () => {
                     <div className="flex items-center gap-3">
                       <Avatar className="relative w-8 h-8 rounded-full overflow-hidden">
                         <AvatarImage
-                          src={item.profile || "https://github.com/shadcn.png"}
+                          src={getMediaUrl(item.profile, "https://github.com/shadcn.png")}
                           alt={item.userName || "@shadcn"}
                           className="object-cover w-full h-full"
                         />

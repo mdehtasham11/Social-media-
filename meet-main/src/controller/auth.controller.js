@@ -1,8 +1,7 @@
-const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const salt = bcrypt.genSaltSync(10);
-const cloudinary = require("../storage/cloudnary");
+const { uploadLocalFile } = require("../storage/cloudnary");
 const { asyncHandler } = require("../common/asyncHandler");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
@@ -11,7 +10,6 @@ require("dotenv").config();
 
 exports.handleRegisterUser = asyncHandler(async (req, res) => {
   const { email, password, name, dob, userName } = req.body;
-  console.log(email, password, name, dob, userName);
 
   const missingField = [];
   if (!email) missingField.push("email");
@@ -43,9 +41,11 @@ exports.handleRegisterUser = asyncHandler(async (req, res) => {
 
   let profileUrl = "";
   if (req.file) {
-    const profileUrlResponse = await cloudinary.uploader.upload(req.file.path);
+    const profileUrlResponse = await uploadLocalFile(
+      req.file,
+      `${req.protocol}://${req.get("host")}`
+    );
     profileUrl = profileUrlResponse.secure_url;
-    fs.unlinkSync(req.file.path);
   }
 
   const hashedPassword = await bcrypt.hashSync(password, salt);
@@ -98,7 +98,7 @@ exports.handleLoginUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findOne({ userName });
-  
+
   // Check if user exists
   if (!user) {
     throw new ApiError(404, "User not found. Please check your username.");

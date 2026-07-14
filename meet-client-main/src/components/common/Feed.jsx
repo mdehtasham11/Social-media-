@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { handleDate } from "../../functions/dateFormat";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 const Feed = () => {
   const [posts, setPosts] = useState([]);
@@ -107,7 +108,7 @@ const Feed = () => {
             >
               <div className="flex items-center mb-2 mt-5 pt-1">
                 <img
-                  src={post.user.profile}
+                  src={getMediaUrl(post.user.profile, "https://github.com/shadcn.png")}
                   alt={post.user.userName}
                   className="w-10 h-10 rounded-full mr-2 object-cover"
                 />
@@ -118,9 +119,9 @@ const Feed = () => {
               </div>
               <Link to={`post/${post._id}`}>
                 <img
-                  src={post.image}
+                  src={getMediaUrl(post.image)}
                   alt="Post"
-                  className="w-full h-96 rounded-lg mb-2"
+                  className="w-full h-96 rounded-lg mb-2 object-cover"
                 />
               </Link>
               <div className="flex justify-between items-center mb-5 mt-5">

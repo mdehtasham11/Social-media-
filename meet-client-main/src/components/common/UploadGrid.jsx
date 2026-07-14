@@ -3,6 +3,7 @@ import { CloudUpload, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { validateImageFile } from "../../utils/imageUploadValidation";
 
 const UploadGrid = () => {
   const [caption, setCaption] = useState("");
@@ -13,7 +14,18 @@ const UploadGrid = () => {
   const navigateTo = useNavigate();
 
   const handleImageChange = (e) => {
-    setImage(e.target.files[0]);
+    const selectedImage = e.target.files[0];
+    const validationError = validateImageFile(selectedImage);
+
+    if (validationError) {
+      toast.error(validationError);
+      e.target.value = "";
+      setImage(null);
+      setIsUploaded(false);
+      return;
+    }
+
+    setImage(selectedImage);
     setIsUploaded(true);
   };
 
@@ -23,6 +35,13 @@ const UploadGrid = () => {
 
   const handleUpload = async (e) => {
     e.preventDefault();
+    const validationError = validateImageFile(image);
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     setIsUploaded(true);
     const formData = new FormData();
     formData.append("caption", caption);
@@ -102,6 +121,7 @@ const UploadGrid = () => {
                       id="image"
                       name="image"
                       type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
                       className="sr-only"
                       onChange={handleImageChange}
                     />

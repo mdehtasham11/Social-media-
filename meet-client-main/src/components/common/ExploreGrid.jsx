@@ -2,6 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { getMediaUrl } from "../../utils/mediaUrl";
 const ExploreGrid = () => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ const ExploreGrid = () => {
             >
               <div className="w-[100%] h-[100%] overflow-hidden rounded-lg shadow-md transform transition duration-300 hover:shadow-lg hover:scale-105">
                 <img
-                  src={image.image}
+                  src={getMediaUrl(image.image)}
                   alt={`Explore ${index}`}
                   className="object-cover w-full h-full"
                 />

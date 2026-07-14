@@ -4,6 +4,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"
 import { Link } from "react-router-dom";
+import { getMediaUrl } from "../../utils/mediaUrl";
 
 const AddFriend = () => {
  const [people, setPeople] = useState([]);
@@ -80,7 +81,7 @@ const AddFriend = () => {
              <div className="flex items-center gap-3">
                <Avatar className="relative w-8 h-8 rounded-full overflow-hidden">
                  <AvatarImage
-                   src={item.profile || "https://github.com/shadcn.png"}
+                   src={getMediaUrl(item.profile, "https://github.com/shadcn.png")}
                    alt={item.userName || "@shadcn"}
                    className="object-cover w-full h-full"
                  />
