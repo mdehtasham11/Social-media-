@@ -182,6 +182,17 @@ const Chat = () => {
             toast.error(response.message || "Could not send message");
             return;
           }
+
+          if (response.message) {
+            setMessages((current) => {
+              if (current.some((item) => item._id === response.message._id)) {
+                return current;
+              }
+
+              return [...current, response.message];
+            });
+          }
+
           setDraft("");
         },
       );

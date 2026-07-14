@@ -20,7 +20,15 @@ function buildMessageEvent(message, currentUserId) {
   };
 }
 
+function buildSendAcknowledgement(message, currentUserId) {
+  return {
+    success: true,
+    message: buildMessageEvent(message, currentUserId),
+  };
+}
+
 module.exports = {
+  buildSendAcknowledgement,
   buildMessageEvent,
   getUserRoom,
 };

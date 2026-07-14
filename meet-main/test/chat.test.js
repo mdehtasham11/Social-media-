@@ -7,6 +7,7 @@ const {
   normalizeMessageText,
 } = require("../src/services/chatService");
 const {
+  buildSendAcknowledgement,
   buildMessageEvent,
   getUserRoom,
 } = require("../src/services/socketChatService");
@@ -62,5 +63,27 @@ test("buildMessageEvent marks whether a delivered message belongs to the receive
     message: "hello",
     createdAt: "2026-07-14T10:00:00.000Z",
     mine: false,
+  });
+});
+
+test("buildSendAcknowledgement returns the saved message to the sender", () => {
+  const message = {
+    _id: "message-2",
+    sender: { toString: () => "user-1" },
+    receiver: { toString: () => "user-2" },
+    message: "instant hello",
+    createdAt: new Date("2026-07-14T10:05:00.000Z"),
+  };
+
+  assert.deepEqual(buildSendAcknowledgement(message, "user-1"), {
+    success: true,
+    message: {
+      _id: "message-2",
+      sender: "user-1",
+      receiver: "user-2",
+      message: "instant hello",
+      createdAt: "2026-07-14T10:05:00.000Z",
+      mine: true,
+    },
   });
 });

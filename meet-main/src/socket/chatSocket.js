@@ -4,6 +4,7 @@ const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const { isFriend, normalizeMessageText } = require("../services/chatService");
 const {
+  buildSendAcknowledgement,
   buildMessageEvent,
   getUserRoom,
 } = require("../services/socketChatService");
@@ -97,7 +98,7 @@ function initializeChatSocket(server) {
         );
 
         if (typeof acknowledge === "function") {
-          acknowledge({ success: true });
+          acknowledge(buildSendAcknowledgement(createdMessage, userId));
         }
       } catch (error) {
         const response = {
