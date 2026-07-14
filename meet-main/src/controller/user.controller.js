@@ -8,6 +8,7 @@ const createNotification = require("../common/Notification");
 const Comment = require("../models/comment.model");
 const Notification = require("../models/notification.model");
 const { analyzeText } = require("../services/perspectiveService");
+const { assertProfileImageFile } = require("../services/profileService");
 
 exports.handlePostUpload = asyncHandler(async (req, res) => {
   const { caption, visibility } = req.body;
@@ -45,6 +46,31 @@ exports.handlePostUpload = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json(new ApiResponse(201, data, "Post uploaded"));
+});
+
+exports.handleUpdateProfilePicture = asyncHandler(async (req, res) => {
+  const { id } = req.user;
+
+  assertProfileImageFile(req.file);
+
+  const profileUrlResponse = await uploadLocalFile(
+    req.file,
+    `${req.protocol}://${req.get("host")}`
+  );
+
+  const updatedUser = await User.findByIdAndUpdate(
+    id,
+    { profile: profileUrlResponse.secure_url },
+    { new: true }
+  ).select("-password");
+
+  if (!updatedUser) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "Profile picture updated"));
 });
 
 exports.handleGetProfile = asyncHandler(async (req, res) => {

@@ -7,10 +7,12 @@ import DropDown from "./DropDown";
 import { useRecoilState } from "recoil";
 import { userSelectorState } from "../../store/selector/userSelctor";
 import { getMediaUrl } from "../../utils/mediaUrl";
+import { Camera } from "lucide-react";
 
 const ProfileGrid = () => {
   const [user, setUser] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [profileUploading, setProfileUploading] = useState(false);
   const [likes, setLikes] = useState(0);
   const { id } = useParams();
   const [userDetail, setUserDetail] = useRecoilState(userSelectorState);
@@ -109,6 +111,47 @@ const ProfileGrid = () => {
     }
   };
 
+  const handleProfilePictureChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("profile", file);
+
+    try {
+      setProfileUploading(true);
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}/api/user/profile-picture`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        toast.error(data.message || "Could not update profile picture");
+        return;
+      }
+
+      const data = await response.json();
+      setUser((current) => ({
+        ...current,
+        user: data.data,
+      }));
+      setUserDetail({ user: data.data });
+      toast.success("Profile picture updated");
+    } catch (error) {
+      toast.error("Internal server error");
+    } finally {
+      setProfileUploading(false);
+      event.target.value = "";
+    }
+  };
+
   useEffect(() => {
     handleGetUser();
   }, [id]);
@@ -160,14 +203,36 @@ const ProfileGrid = () => {
           <>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <img
-                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-                  src={getMediaUrl(user.user.profile, "https://github.com/shadcn.png")}
-                  alt={user.user.userName}
-                />
+                <div className="relative h-24 w-24 shrink-0">
+                  <img
+                    className="h-24 w-24 rounded-full object-cover border-2 border-gray-300"
+                    src={getMediaUrl(user.user.profile, "https://github.com/shadcn.png")}
+                    alt={user.user.userName}
+                  />
+                  {user.user._id === userDetail?._id && (
+                    <label
+                      className="absolute bottom-0 right-0 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-zinc-900 text-white shadow-md transition hover:bg-zinc-700"
+                      title="Change profile picture"
+                    >
+                      <Camera size={17} />
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        className="hidden"
+                        disabled={profileUploading}
+                        onChange={handleProfilePictureChange}
+                      />
+                    </label>
+                  )}
+                </div>
                 <div>
                   <h1 className="text-3xl font-semibold">{user.user.name}</h1>
                   <p className="text-gray-600">{user.user.userName}</p>
+                  {user.user._id === userDetail?._id && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {profileUploading ? "Uploading..." : "Tap camera to change photo"}
+                    </p>
+                  )}
                 </div>
               </div>
               {user.user._id !== userDetail?._id && (

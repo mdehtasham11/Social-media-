@@ -3,6 +3,7 @@ const multer = require("multer");
 const { fileFilter, storage } = require("../storage/multer");
 const {
   handlePostUpload,
+  handleUpdateProfilePicture,
   handleGetProfile,
   handleGetExplorePage,
   handleGetSinglePost,
@@ -27,6 +28,9 @@ const upload = multer({
 });
 
 router.route("/upload").post(user, upload.single("image"), handlePostUpload);
+router
+  .route("/profile-picture")
+  .post(user, upload.single("profile"), handleUpdateProfilePicture);
 router.route("/profile/:id").get(user, handleGetProfile);
 router.route("/explore").get(user, handleGetExplorePage);
 router.route("/post/:id").get(user, handleGetSinglePost);
